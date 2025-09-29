@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.3...xpense-v0.2.4) (2025-09-29)
+
+
+### Bug Fixes
+
+* remove name ([b20782f](https://github.com/Gabriel-Rockson/xpense/commit/b20782f8a4048582645f622d06417767b2ea712a))
+
 ## [0.2.3](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.2...xpense-v0.2.3) (2025-09-29)
 
 
