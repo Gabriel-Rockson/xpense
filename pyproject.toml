@@ -1,6 +1,6 @@
 [project]
 name = "xpense"
-version = "0.2.2"
+version = "0.2.3"
 description = "A beautiful CLI expense and income tracker"
 readme = "README.md"
 requires-python = ">=3.8"
