@@ -49,7 +49,7 @@ xpense 100 utilities "electricity bill"
 **Add income:**
 ```bash
 # Use 'add' subcommand for income
-xpense add 2000 salary "from day job at AmaliTech"
+xpense add 2000 salary "from day job"
 xpense add 500 freelance "web design project"
 ```
 
@@ -158,7 +158,7 @@ Transactions are stored in CSV format at `~/.xpense/expenses.csv` with the follo
 ```csv
 date,type,amount,category,note
 2025-09-29 10:30:00,expense,20.0,transport,to the office
-2025-09-29 12:15:00,income,2000.0,salary,from day job at AmaliTech
+2025-09-29 12:15:00,income,2000.0,salary,from day job
 ```
 
 ### Fields
