@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.2...xpense-v0.2.3) (2025-09-29)
+
+
+### Bug Fixes
+
+* trigger publishing ([fa537e6](https://github.com/Gabriel-Rockson/xpense/commit/fa537e6f8b170636b198bba0b59506fb78adc5a2))
+
 ## [0.2.2](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.1...xpense-v0.2.2) (2025-09-29)
 
 
