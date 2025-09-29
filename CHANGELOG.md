@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.1...xpense-v0.2.2) (2025-09-29)
+
+
+### Bug Fixes
+
+* combine release and publish workflows to trigger PyPI upload ([be2ca19](https://github.com/Gabriel-Rockson/xpense/commit/be2ca19f0cdd79564513b6132d593e1088973ea4))
+
 ## [0.2.1](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.0...xpense-v0.2.1) (2025-09-29)
 
 
