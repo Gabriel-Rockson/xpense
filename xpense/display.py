@@ -1,67 +1,40 @@
 """Display utilities using Rich for beautiful terminal output."""
 
-from typing import List, Dict
+from typing import Any
+
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-
 console = Console()
+
+from xpense.config import cfg
 
 
 def format_amount(amount: float, transaction_type: str) -> Text:
-    """
-    Format amount with color based on transaction type.
-
-    Args:
-        amount: Transaction amount
-        transaction_type: "income" or "expense"
-
-    Returns:
-        Rich Text object with colored amount
-    """
     if transaction_type == "income":
-        return Text(f"+${amount:.2f}", style="bold green")
+        return Text(f"+{cfg.currency} {amount:.2f}", style="bold green")
     else:
-        return Text(f"-${amount:.2f}", style="bold red")
+        return Text(f"-{cfg.currency} {amount:.2f}", style="bold red")
 
 
 def format_balance(balance: float) -> Text:
-    """
-    Format balance with color based on positive/negative.
-
-    Args:
-        balance: Balance amount
-
-    Returns:
-        Rich Text object with colored balance
-    """
     color = "green" if balance >= 0 else "red"
     sign = "+" if balance >= 0 else ""
-    return Text(f"{sign}${balance:.2f}", style=f"bold {color}")
+    return Text(f"{sign}{cfg.currency} {balance:.2f}", style=f"bold {color}")
 
 
 def show_success(message: str) -> None:
-    """Show success message with checkmark."""
     console.print(f"[green]✓[/green] {message}")
 
 
 def show_error(message: str) -> None:
-    """Show error message."""
     console.print(f"[red]✗[/red] {message}", style="red")
 
 
 def show_transaction_list(
-    transactions: List[Dict[str, str]],
-    title: str = "Transactions"
+    transactions: list[dict[str, str]], title: str = "Transactions"
 ) -> None:
-    """
-    Display transactions in a table.
-
-    Args:
-        transactions: List of transaction dictionaries
-        title: Table title
-    """
     if not transactions:
         console.print("[yellow]No transactions found.[/yellow]")
         return
@@ -78,7 +51,6 @@ def show_transaction_list(
         amount = float(t["amount"])
         formatted_amount = format_amount(amount, t["type"])
 
-        # Add emoji for type
         type_emoji = "💰" if t["type"] == "income" else "💸"
         type_display = f"{type_emoji} {t['type'].title()}"
 
@@ -88,23 +60,13 @@ def show_transaction_list(
             formatted_amount,
             t["category"],
             t.get("account", "default"),
-            t["note"] or "-"
+            t["note"] or "-",
         )
 
     console.print(table)
 
 
-def show_total(
-    total: float,
-    filters: Dict[str, any]
-) -> None:
-    """
-    Display total with filter information.
-
-    Args:
-        total: Total amount
-        filters: Dictionary of applied filters
-    """
+def show_total(total: float, filters: dict[str, Any]) -> None:
     filter_parts = []
     if filters.get("month"):
         filter_parts.append(f"Month: {filters['month']}")
@@ -122,16 +84,10 @@ def show_total(
     console.print()
 
 
-def show_balance(balance_data: Dict[str, float], month: int = None, account: str = None) -> None:
-    """
-    Display balance breakdown.
-
-    Args:
-        balance_data: Dictionary with income, expenses, and balance
-        month: Optional month filter
-        account: Optional account filter
-    """
-    title = f"💵 Balance"
+def show_balance(
+    balance_data: dict[str, float], month: int | None = None, account: str | None = None
+) -> None:
+    title = "💵 Balance"
     filter_parts = []
     if month:
         filter_parts.append(f"Month: {month}")
@@ -145,36 +101,29 @@ def show_balance(balance_data: Dict[str, float], month: int = None, account: str
     table.add_column("Category", style="bold")
     table.add_column("Amount", justify="right")
 
-    # Income row
-    income_text = Text(f"+${balance_data['income']:.2f}", style="bold green")
+    income_text = Text(
+        f"+{cfg.currency} {balance_data['income']:.2f}", style="bold green"
+    )
     table.add_row("Income", income_text)
 
-    # Expenses row
-    expenses_text = Text(f"-${balance_data['expenses']:.2f}", style="bold red")
+    expenses_text = Text(
+        f"-{cfg.currency} {balance_data['expenses']:.2f}", style="bold red"
+    )
     table.add_row("Expenses", expenses_text)
 
-    # Balance row
     table.add_row("─" * 10, "─" * 10)
-    balance_text = format_balance(balance_data['balance'])
+    balance_text = format_balance(balance_data["balance"])
     table.add_row("Balance", balance_text)
 
     console.print(table)
 
 
 def show_report(
-    breakdown: Dict[str, Dict[str, float]],
-    month: int = None,
-    account: str = None
+    breakdown: dict[str, dict[str, float]],
+    month: int | None = None,
+    account: str | None = None,
 ) -> None:
-    """
-    Display detailed report by category.
-
-    Args:
-        breakdown: Dictionary with income and expense breakdowns by category
-        month: Optional month filter
-        account: Optional account filter
-    """
-    title = f"📊 Report"
+    title = "📊 Report"
     filter_parts = []
     if month:
         filter_parts.append(f"Month: {month}")
@@ -184,12 +133,9 @@ def show_report(
     if filter_parts:
         title += f" ({' | '.join(filter_parts)})"
 
-    # Income table
     if breakdown["income"]:
         income_table = Table(
-            title=f"{title} - Income",
-            show_header=True,
-            header_style="bold green"
+            title=f"{title} - Income", show_header=True, header_style="bold green"
         )
         income_table.add_column("Category", style="cyan")
         income_table.add_column("Amount", justify="right")
@@ -198,25 +144,21 @@ def show_report(
         for category, amount in sorted(breakdown["income"].items()):
             income_total += amount
             income_table.add_row(
-                category,
-                Text(f"+${amount:.2f}", style="green")
+                category, Text(f"+{cfg.currency} {amount:.2f}", style="green")
             )
 
         income_table.add_row("─" * 20, "─" * 15)
         income_table.add_row(
             "[bold]Total Income[/bold]",
-            Text(f"+${income_total:.2f}", style="bold green")
+            Text(f"+{cfg.currency} {income_total:.2f}", style="bold green"),
         )
 
         console.print(income_table)
         console.print()
 
-    # Expense table
     if breakdown["expense"]:
         expense_table = Table(
-            title=f"{title} - Expenses",
-            show_header=True,
-            header_style="bold red"
+            title=f"{title} - Expenses", show_header=True, header_style="bold red"
         )
         expense_table.add_column("Category", style="cyan")
         expense_table.add_column("Amount", justify="right")
@@ -225,20 +167,18 @@ def show_report(
         for category, amount in sorted(breakdown["expense"].items()):
             expense_total += amount
             expense_table.add_row(
-                category,
-                Text(f"-${amount:.2f}", style="red")
+                category, Text(f"-{cfg.currency} {amount:.2f}", style="red")
             )
 
         expense_table.add_row("─" * 20, "─" * 15)
         expense_table.add_row(
             "[bold]Total Expenses[/bold]",
-            Text(f"-${expense_total:.2f}", style="bold red")
+            Text(f"-{cfg.currency} {expense_total:.2f}", style="bold red"),
         )
 
         console.print(expense_table)
         console.print()
 
-    # Net balance
     income_total = sum(breakdown["income"].values())
     expense_total = sum(breakdown["expense"].values())
     net_balance = income_total - expense_total
@@ -247,17 +187,7 @@ def show_report(
     console.print()
 
 
-def show_categories(
-    categories: List[str],
-    transaction_type: str = "all"
-) -> None:
-    """
-    Display list of categories.
-
-    Args:
-        categories: List of category names
-        transaction_type: Type filter applied
-    """
+def show_categories(categories: list[str], transaction_type: str = "all") -> None:
     if not categories:
         console.print("[yellow]No categories found.[/yellow]")
         return
@@ -271,17 +201,7 @@ def show_categories(
     console.print()
 
 
-def show_accounts(
-    accounts: List[str],
-    transaction_type: str = "all"
-) -> None:
-    """
-    Display list of accounts.
-
-    Args:
-        accounts: List of account names
-        transaction_type: Type filter applied
-    """
+def show_accounts(accounts: list[str], transaction_type: str = "all") -> None:
     if not accounts:
         console.print("[yellow]No accounts found.[/yellow]")
         return
@@ -296,16 +216,8 @@ def show_accounts(
 
 
 def show_account_balances(
-    balances: Dict[str, Dict[str, float]],
-    month: int = None
+    balances: dict[str, dict[str, float]], month: int | None = None
 ) -> None:
-    """
-    Display balance breakdown by account.
-
-    Args:
-        balances: Dictionary mapping account names to balance data
-        month: Optional month filter
-    """
     if not balances:
         console.print("[yellow]No account balances found.[/yellow]")
         return
@@ -325,9 +237,9 @@ def show_account_balances(
     total_balance = 0.0
 
     for account, balance_data in sorted(balances.items()):
-        income = balance_data['income']
-        expenses = balance_data['expenses']
-        balance = balance_data['balance']
+        income = balance_data["income"]
+        expenses = balance_data["expenses"]
+        balance = balance_data["balance"]
 
         total_income += income
         total_expenses += expenses
@@ -335,18 +247,17 @@ def show_account_balances(
 
         table.add_row(
             account,
-            f"+${income:.2f}",
-            f"-${expenses:.2f}",
-            format_balance(balance)
+            f"+{cfg.currency} {income:.2f}",
+            f"-{cfg.currency} {expenses:.2f}",
+            format_balance(balance),
         )
 
-    # Add totals row
     table.add_row("─" * 10, "─" * 10, "─" * 10, "─" * 10)
     table.add_row(
         "[bold]TOTAL[/bold]",
-        Text(f"+${total_income:.2f}", style="bold green"),
-        Text(f"-${total_expenses:.2f}", style="bold red"),
-        format_balance(total_balance)
+        Text(f"+{cfg.currency} {total_income:.2f}", style="bold green"),
+        Text(f"-{cfg.currency} {total_expenses:.2f}", style="bold red"),
+        format_balance(total_balance),
     )
 
     console.print(table)
