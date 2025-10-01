@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.4...xpense-v0.3.0) (2025-10-01)
+
+
+### Features
+
+* add environment config and restructure core modules ([#6](https://github.com/Gabriel-Rockson/xpense/issues/6)) ([f2b6608](https://github.com/Gabriel-Rockson/xpense/commit/f2b66086f3706ef7a161ed825f0a57a86fe332b8))
+
 ## [0.2.4](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.3...xpense-v0.2.4) (2025-09-29)
 
 
