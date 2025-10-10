@@ -1,13 +1,15 @@
-"""Main entry point for xpense CLI."""
-
 import sys
 from datetime import datetime
-from xpense.cli import app, add_expense_default
+
+import typer
+
+from xpense.cli import add_expense_default, app
+from xpense.display import show_error
+from xpense.utils import parse_date_arg
 
 
-def _parse_date_from_args():
+def _parse_date_from_args() -> datetime | None:
     """Parse and remove --date or -d flag from sys.argv."""
-    date = None
     date_str = None
 
     if "--date" in sys.argv:
@@ -25,17 +27,15 @@ def _parse_date_from_args():
 
     if date_str:
         try:
-            date = datetime.strptime(date_str, "%Y-%m-%d")
-        except ValueError:
-            from xpense.display import show_error
-            show_error(f"Invalid date format '{date_str}'. Use YYYY-MM-DD (e.g., 2024-01-15)")
-            import sys as sys_module
-            sys_module.exit(1)
+            return parse_date_arg(date_str)
+        except ValueError as e:
+            show_error(str(e))
+            sys.exit(1)
 
-    return date
+    return None
 
 
-def main():
+def main() -> None:
     """Entry point that handles default expense syntax."""
     if len(sys.argv) > 1:
         try:
@@ -47,8 +47,6 @@ def main():
         date = _parse_date_from_args()
 
         if len(sys.argv) < 3:
-            from xpense.display import show_error
-            import typer
             show_error("Usage: xpense AMOUNT CATEGORY [NOTE] [--date YYYY-MM-DD]")
             raise typer.Exit(1)
 
@@ -63,3 +61,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

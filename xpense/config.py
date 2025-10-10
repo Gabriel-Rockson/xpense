@@ -2,11 +2,12 @@ import json
 import os
 from difflib import get_close_matches
 from pathlib import Path
-from typing import Any
 
 from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from xpense.utils import normalize_identifier
 
 load_dotenv()
 
@@ -33,17 +34,17 @@ class Config(BaseSettings):
 
     @field_validator("accounts", mode="before")
     def normalize_accounts(cls, accounts: list[str]) -> list[str]:
-        return [a.lower().replace(" ", "_") for a in accounts]
+        return [normalize_identifier(a) for a in accounts]
 
     @field_validator("default_account", mode="before")
     def normalize_default_account(cls, account: str) -> str:
-        return account.lower().replace(" ", "_")
+        return normalize_identifier(account)
 
     def get_default_account(self) -> str:
         return self.default_account
 
     def set_default_account(self, account: str) -> None:
-        account = account.lower().replace(" ", "_")
+        account = normalize_identifier(account)
         if not self.is_account_registered(account):
             raise ValueError(
                 f"Account '{account}' is not registered. Add it first with 'xpense account add {account}'"
@@ -55,14 +56,14 @@ class Config(BaseSettings):
         return self.accounts
 
     def add_account(self, account: str) -> None:
-        account = account.lower().replace(" ", "_")
+        account = normalize_identifier(account)
         if account in self.accounts:
             raise ValueError(f"Account '{account}' already exists")
         self.accounts.append(account)
         self.save()
 
     def remove_account(self, account: str) -> None:
-        account = account.lower().replace(" ", "_")
+        account = normalize_identifier(account)
         if account not in self.accounts:
             raise ValueError(f"Account '{account}' does not exist")
 
@@ -77,11 +78,11 @@ class Config(BaseSettings):
         self.save()
 
     def is_account_registered(self, account: str) -> bool:
-        account = account.lower().replace(" ", "_")
+        account = normalize_identifier(account)
         return account in self.accounts
 
     def suggest_accounts(self, account: str, limit: int = 3) -> list[str]:
-        account = account.lower().replace(" ", "_")
+        account = normalize_identifier(account)
         return get_close_matches(account, self.accounts, n=limit, cutoff=0.6)
 
     def set_currency(self, code: str) -> None:
@@ -102,9 +103,6 @@ class Config(BaseSettings):
         self.accounts = ["cash"]
         self.currency = "USD"
         self.save()
-
-    def get(self, key: str, default: Any = None) -> Any:
-        return getattr(self, key, default)
 
 
 def load_config() -> Config:

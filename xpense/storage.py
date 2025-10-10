@@ -1,12 +1,12 @@
-"""Storage layer for xpense transactions."""
-
 import csv
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
+
+from xpense.constants import CSV_FIELDNAMES
+from xpense.utils import normalize_identifier
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ class TransactionStorage:
     def _write_header(self) -> None:
         with open(self.csv_path, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["date", "type", "amount", "category", "account", "note"])
+            writer.writerow(CSV_FIELDNAMES)
 
     def add_transaction(
         self,
@@ -43,14 +43,14 @@ class TransactionStorage:
         category: str,
         account: str = "default",
         note: str = "",
-        date: Optional[datetime] = None,
+        date: datetime | None = None,
     ) -> dict[str, str]:
         if date is None:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         else:
             timestamp = date.strftime("%Y-%m-%d %H:%M:%S")
-        normalized_category = category.lower().replace(" ", "_")
-        normalized_account = account.lower().replace(" ", "_")
+        normalized_category = normalize_identifier(category)
+        normalized_account = normalize_identifier(account)
 
         transaction = {
             "date": timestamp,
@@ -62,19 +62,17 @@ class TransactionStorage:
         }
 
         with open(self.csv_path, "a", newline="") as f:
-            writer = csv.DictWriter(
-                f, fieldnames=["date", "type", "amount", "category", "account", "note"]
-            )
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDNAMES)
             writer.writerow(transaction)
 
         return transaction
 
     def get_transactions(
         self,
-        month: Optional[int] = None,
-        category: Optional[str] = None,
-        transaction_type: Optional[str] = None,
-        account: Optional[str] = None,
+        month: int | None = None,
+        category: str | None = None,
+        transaction_type: str | None = None,
+        account: str | None = None,
     ) -> list[dict[str, str]]:
         if not self.csv_path.exists():
             return []
@@ -93,7 +91,7 @@ class TransactionStorage:
                         continue
 
                 if category is not None:
-                    normalized_category = category.lower().replace(" ", "_")
+                    normalized_category = normalize_identifier(category)
                     if row["category"] != normalized_category:
                         continue
 
@@ -102,7 +100,7 @@ class TransactionStorage:
                         continue
 
                 if account is not None:
-                    normalized_account = account.lower().replace(" ", "_")
+                    normalized_account = normalize_identifier(account)
                     if row.get("account", "default") != normalized_account:
                         continue
 
@@ -110,22 +108,22 @@ class TransactionStorage:
 
         return transactions
 
-    def get_categories(self, transaction_type: Optional[str] = None) -> list[str]:
+    def get_categories(self, transaction_type: str | None = None) -> list[str]:
         transactions = self.get_transactions(transaction_type=transaction_type)
         categories = set(t["category"] for t in transactions)
         return sorted(categories)
 
-    def get_accounts(self, transaction_type: Optional[str] = None) -> list[str]:
+    def get_accounts(self, transaction_type: str | None = None) -> list[str]:
         transactions = self.get_transactions(transaction_type=transaction_type)
         accounts = set(t.get("account", "default") for t in transactions)
         return sorted(accounts)
 
     def calculate_total(
         self,
-        month: Optional[int] = None,
-        category: Optional[str] = None,
-        transaction_type: Optional[str] = None,
-        account: Optional[str] = None,
+        month: int | None = None,
+        category: str | None = None,
+        transaction_type: str | None = None,
+        account: str | None = None,
     ) -> float:
         transactions = self.get_transactions(
             month=month,
@@ -145,7 +143,7 @@ class TransactionStorage:
         return total
 
     def calculate_balance(
-        self, month: Optional[int] = None, account: Optional[str] = None
+        self, month: int | None = None, account: str | None = None
     ) -> dict[str, float]:
         transactions = self.get_transactions(month=month, account=account)
 
@@ -158,7 +156,7 @@ class TransactionStorage:
         return {"income": income, "expenses": expenses, "balance": balance}
 
     def get_category_breakdown(
-        self, month: Optional[int] = None, account: Optional[str] = None
+        self, month: int | None = None, account: str | None = None
     ) -> dict[str, dict[str, float]]:
         transactions = self.get_transactions(month=month, account=account)
 
@@ -177,7 +175,7 @@ class TransactionStorage:
         return breakdown
 
     def get_account_balances(
-        self, month: Optional[int] = None
+        self, month: int | None = None
     ) -> dict[str, dict[str, float]]:
         accounts = self.get_accounts()
         balances = {}
@@ -192,17 +190,7 @@ class TransactionStorage:
 
         with open(output_path, "w", newline="") as f:
             if transactions:
-                writer = csv.DictWriter(
-                    f,
-                    fieldnames=[
-                        "date",
-                        "type",
-                        "amount",
-                        "category",
-                        "account",
-                        "note",
-                    ],
-                )
+                writer = csv.DictWriter(f, fieldnames=CSV_FIELDNAMES)
                 writer.writeheader()
                 writer.writerows(transactions)
 

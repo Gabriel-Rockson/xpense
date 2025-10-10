@@ -1,18 +1,17 @@
-"""Display utilities using Rich for beautiful terminal output."""
-
 from typing import Any
 
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-console = Console()
-
 from xpense.config import cfg
+from xpense.constants import TransactionType
+
+console = Console()
 
 
 def format_amount(amount: float, transaction_type: str) -> Text:
-    if transaction_type == "income":
+    if transaction_type == TransactionType.INCOME:
         return Text(f"+{cfg.currency} {amount:.2f}", style="bold green")
     else:
         return Text(f"-{cfg.currency} {amount:.2f}", style="bold red")
@@ -51,7 +50,7 @@ def show_transaction_list(
         amount = float(t["amount"])
         formatted_amount = format_amount(amount, t["type"])
 
-        type_emoji = "💰" if t["type"] == "income" else "💸"
+        type_emoji = "💰" if t["type"] == TransactionType.INCOME else "💸"
         type_display = f"{type_emoji} {t['type'].title()}"
 
         table.add_row(

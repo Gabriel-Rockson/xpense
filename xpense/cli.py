@@ -1,16 +1,17 @@
-"""CLI commands for xpense using Typer."""
-
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import typer
+from rich.table import Table
 from typing_extensions import Annotated
 
 from xpense.config import cfg
+from xpense.constants import TransactionType
 from xpense.display import (
     console,
+    show_account_balances,
+    show_accounts,
     show_balance,
     show_categories,
     show_error,
@@ -20,6 +21,7 @@ from xpense.display import (
     show_transaction_list,
 )
 from xpense.storage import TransactionStorage
+from xpense.utils import parse_date_arg
 
 app = typer.Typer(
     help="A beautiful CLI expense and income tracker",
@@ -28,7 +30,6 @@ app = typer.Typer(
 )
 
 storage = TransactionStorage()
-config = cfg
 
 
 def _validate_amount(amount: float) -> bool:
@@ -40,10 +41,10 @@ def _validate_amount(amount: float) -> bool:
 
 def _validate_and_get_account(account: str | None) -> str | None:
     if account is None:
-        account = config.get_default_account()
+        account = cfg.get_default_account()
 
-    if not config.is_account_registered(account):
-        suggestions = config.suggest_accounts(account)
+    if not cfg.is_account_registered(account):
+        suggestions = cfg.suggest_accounts(account)
         if suggestions:
             show_error(
                 f"Account '{account}' not registered. Did you mean: {', '.join(suggestions)}?"
@@ -58,13 +59,16 @@ def _validate_and_get_account(account: str | None) -> str | None:
 
 
 def _format_account_suffix(account: str) -> str:
-    return f" [{account}]" if account != config.get_default_account() else ""
+    return f" [{account}]" if account != cfg.get_default_account() else ""
 
 
 def add_expense_default(
-    amount: float, category: str, account: str = None, note: str = "", date: Optional[datetime] = None
+    amount: float,
+    category: str,
+    account: str | None = None,
+    note: str = "",
+    date: datetime | None = None,
 ) -> None:
-    """Add expense with default syntax."""
     try:
         if not _validate_amount(amount):
             sys.exit(1)
@@ -74,7 +78,7 @@ def add_expense_default(
             sys.exit(1)
 
         transaction = storage.add_transaction(
-            transaction_type="expense",
+            transaction_type=TransactionType.EXPENSE,
             amount=amount,
             category=category,
             account=validated_account,
@@ -87,8 +91,6 @@ def add_expense_default(
             f"Expense added: -{cfg.currency} {amount:.2f} in {transaction['category']}{account_suffix}"
         )
 
-    except SystemExit:
-        raise
     except Exception as e:
         show_error(f"Failed to add expense: {str(e)}")
         sys.exit(1)
@@ -100,15 +102,14 @@ def add_income(
     category: str,
     note: Annotated[str, typer.Argument()] = "",
     account: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--account", "-a", help="Account name (default: from config)"),
     ] = None,
     date: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--date", "-d", help="Transaction date in YYYY-MM-DD format"),
     ] = None,
 ) -> None:
-    """Add INCOME transaction (positive/incoming money)."""
     try:
         if not _validate_amount(amount):
             raise typer.Exit(1)
@@ -120,13 +121,13 @@ def add_income(
         parsed_date = None
         if date:
             try:
-                parsed_date = datetime.strptime(date, "%Y-%m-%d")
-            except ValueError:
-                show_error(f"Invalid date format '{date}'. Use YYYY-MM-DD (e.g., 2024-01-15)")
+                parsed_date = parse_date_arg(date)
+            except ValueError as e:
+                show_error(str(e))
                 raise typer.Exit(1)
 
         transaction = storage.add_transaction(
-            transaction_type="income",
+            transaction_type=TransactionType.INCOME,
             amount=amount,
             category=category,
             account=validated_account,
@@ -139,8 +140,6 @@ def add_income(
             f"Income added: +{cfg.currency} {amount:.2f} in {transaction['category']}{account_suffix}"
         )
 
-    except typer.Exit:
-        raise
     except Exception as e:
         show_error(f"Failed to add income: {str(e)}")
         raise typer.Exit(1)
@@ -158,7 +157,9 @@ def _validate_transaction_type(type: str) -> None:
         raise typer.Exit(1)
 
 
-def _build_filter_title(base: str, month: int | None, category: str | None, type: str, account: str | None) -> str:
+def _build_filter_title(
+    base: str, month: int | None, category: str | None, type: str, account: str | None
+) -> str:
     parts = [base]
     if month:
         parts.append(f"Month: {month}")
@@ -173,13 +174,13 @@ def _build_filter_title(base: str, month: int | None, category: str | None, type
 
 @app.command()
 def list(
-    month: Annotated[Optional[int], typer.Option(help="Filter by month (1-12)")] = None,
-    category: Annotated[Optional[str], typer.Option(help="Filter by category")] = None,
+    month: Annotated[int | None, typer.Option(help="Filter by month (1-12)")] = None,
+    category: Annotated[str | None, typer.Option(help="Filter by category")] = None,
     type: Annotated[
-        Optional[str], typer.Option(help="Filter by type: expense, income, or all")
+        str | None, typer.Option(help="Filter by type: expense, income, or all")
     ] = "all",
     account: Annotated[
-        Optional[str], typer.Option("--account", "-a", help="Filter by account")
+        str | None, typer.Option("--account", "-a", help="Filter by account")
     ] = None,
 ) -> None:
     """List transactions with optional filters."""
@@ -205,10 +206,10 @@ def list(
 
 @app.command()
 def total(
-    month: Annotated[Optional[int], typer.Option(help="Filter by month (1-12)")] = None,
-    category: Annotated[Optional[str], typer.Option(help="Filter by category")] = None,
+    month: Annotated[int | None, typer.Option(help="Filter by month (1-12)")] = None,
+    category: Annotated[str | None, typer.Option(help="Filter by category")] = None,
     account: Annotated[
-        Optional[str], typer.Option("--account", "-a", help="Filter by account")
+        str | None, typer.Option("--account", "-a", help="Filter by account")
     ] = None,
 ) -> None:
     """Show total with optional filters."""
@@ -227,9 +228,9 @@ def total(
 
 @app.command()
 def balance(
-    month: Annotated[Optional[int], typer.Option(help="Filter by month (1-12)")] = None,
+    month: Annotated[int | None, typer.Option(help="Filter by month (1-12)")] = None,
     account: Annotated[
-        Optional[str], typer.Option("--account", "-a", help="Filter by account")
+        str | None, typer.Option("--account", "-a", help="Filter by account")
     ] = None,
 ) -> None:
     """Show net balance (income - expenses)."""
@@ -245,9 +246,9 @@ def balance(
 
 @app.command()
 def report(
-    month: Annotated[Optional[int], typer.Option(help="Filter by month (1-12)")] = None,
+    month: Annotated[int | None, typer.Option(help="Filter by month (1-12)")] = None,
     account: Annotated[
-        Optional[str], typer.Option("--account", "-a", help="Filter by account")
+        str | None, typer.Option("--account", "-a", help="Filter by account")
     ] = None,
 ) -> None:
     """Show beautiful breakdown by category with totals for both income and expenses."""
@@ -264,7 +265,7 @@ def report(
 @app.command()
 def categories(
     type: Annotated[
-        Optional[str], typer.Option(help="Filter by type: expense, income, or all")
+        str | None, typer.Option(help="Filter by type: expense, income, or all")
     ] = "all",
 ) -> None:
     """List all categories used."""
@@ -282,14 +283,12 @@ def categories(
 @app.command()
 def accounts(
     type: Annotated[
-        Optional[str], typer.Option(help="Filter by type: expense, income, or all")
+        str | None, typer.Option(help="Filter by type: expense, income, or all")
     ] = "all",
 ) -> None:
     """List all accounts used."""
     try:
         _validate_transaction_type(type)
-
-        from xpense.display import show_accounts
 
         transaction_type = None if type == "all" else type
         account_list = storage.get_accounts(transaction_type=transaction_type)
@@ -302,13 +301,11 @@ def accounts(
 
 @app.command(name="account-balances")
 def account_balances(
-    month: Annotated[Optional[int], typer.Option(help="Filter by month (1-12)")] = None,
+    month: Annotated[int | None, typer.Option(help="Filter by month (1-12)")] = None,
 ) -> None:
     """Show balance breakdown by account."""
     try:
         _validate_month(month)
-
-        from xpense.display import show_account_balances
 
         balances = storage.get_account_balances(month=month)
         show_account_balances(balances, month=month)
@@ -320,7 +317,7 @@ def account_balances(
 
 @app.command()
 def export(
-    output: Annotated[Optional[str], typer.Option(help="Output file path")] = None,
+    output: Annotated[str | None, typer.Option(help="Output file path")] = None,
 ) -> None:
     """Export transactions to CSV."""
     try:
@@ -346,7 +343,7 @@ app.add_typer(account_app, name="account")
 def account_add(account_name: str) -> None:
     """Register a new account."""
     try:
-        config.add_account(account_name)
+        cfg.add_account(account_name)
         show_success(f"Account '{account_name}' added successfully")
 
     except ValueError as e:
@@ -361,10 +358,8 @@ def account_add(account_name: str) -> None:
 def account_list() -> None:
     """List all registered accounts."""
     try:
-        from rich.table import Table
-
-        accounts = config.get_accounts()
-        default_account = config.get_default_account()
+        accounts = cfg.get_accounts()
+        default_account = cfg.get_default_account()
 
         if not accounts:
             console.print("[yellow]No accounts registered.[/yellow]")
@@ -404,7 +399,7 @@ def account_remove(
                 console.print("[yellow]Cancelled.[/yellow]")
                 raise typer.Exit(0)
 
-        config.remove_account(account_name)
+        cfg.remove_account(account_name)
         show_success(f"Account '{account_name}' removed successfully")
 
     except ValueError as e:
@@ -419,7 +414,7 @@ def account_remove(
 def account_set_default(account_name: str) -> None:
     """Set the default account."""
     try:
-        config.set_default_account(account_name)
+        cfg.set_default_account(account_name)
         show_success(f"Default account set to '{account_name}'")
 
     except ValueError as e:
@@ -438,17 +433,15 @@ app.add_typer(config_app, name="config")
 def config_show() -> None:
     """Show current configuration."""
     try:
-        from rich.table import Table
-
         table = Table(
             title="⚙️  Configuration", show_header=True, header_style="bold cyan"
         )
         table.add_column("Setting", style="cyan")
         table.add_column("Value", style="yellow")
 
-        table.add_row("Default Account", config.get_default_account())
-        table.add_row("Currency", config.get("currency", "USD"))
-        table.add_row("Registered Accounts", ", ".join(config.get_accounts()))
+        table.add_row("Default Account", cfg.get_default_account())
+        table.add_row("Currency", cfg.currency)
+        table.add_row("Registered Accounts", ", ".join(cfg.get_accounts()))
 
         console.print(table)
 
@@ -461,8 +454,8 @@ def config_show() -> None:
 def config_set_currency(currency_code: str) -> None:
     """Set the currency code (e.g., USD, GHS, EUR)."""
     try:
-        config.set_currency(currency_code)
-        show_success(f"Currency set to '{config.currency}'")
+        cfg.set_currency(currency_code)
+        show_success(f"Currency set to '{cfg.currency}'")
 
     except ValueError as e:
         show_error(str(e))
@@ -488,7 +481,7 @@ def config_reset(
                 console.print("[yellow]Cancelled.[/yellow]")
                 raise typer.Exit(0)
 
-        config.reset()
+        cfg.reset()
         show_success("Configuration reset to defaults")
 
     except Exception as e:
@@ -498,4 +491,3 @@ def config_reset(
 
 if __name__ == "__main__":
     app()
-
