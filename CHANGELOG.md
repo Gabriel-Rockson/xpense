@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.5.0...xpense-v0.6.0) (2025-10-10)
+
+
+### Features
+
+* add streamlit dashbaord ([#13](https://github.com/Gabriel-Rockson/xpense/issues/13)) ([60ebe10](https://github.com/Gabriel-Rockson/xpense/commit/60ebe106d8648f8a7b70f1bc0e506b4883b028d7))
+
 ## [0.5.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.4.0...xpense-v0.5.0) (2025-10-10)
 
 
