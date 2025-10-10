@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.3.0...xpense-v0.4.0) (2025-10-10)
+
+
+### Features
+
+* add ability to add past transactions with custom dates ([#8](https://github.com/Gabriel-Rockson/xpense/issues/8)) ([cd2b67c](https://github.com/Gabriel-Rockson/xpense/commit/cd2b67c82973702856c88ffc4bbd9ab7af0963e8))
+
 ## [0.3.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.2.4...xpense-v0.3.0) (2025-10-01)
 
 
