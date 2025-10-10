@@ -62,7 +62,7 @@ def _format_account_suffix(account: str) -> str:
 
 
 def add_expense_default(
-    amount: float, category: str, account: str = None, note: str = ""
+    amount: float, category: str, account: str = None, note: str = "", date: Optional[datetime] = None
 ) -> None:
     """Add expense with default syntax."""
     try:
@@ -79,6 +79,7 @@ def add_expense_default(
             category=category,
             account=validated_account,
             note=note,
+            date=date,
         )
 
         account_suffix = _format_account_suffix(transaction["account"])
@@ -97,10 +98,14 @@ def add_expense_default(
 def add_income(
     amount: float,
     category: str,
-    note: Annotated[Optional[str], typer.Argument()] = "",
+    note: Annotated[str, typer.Argument()] = "",
     account: Annotated[
         Optional[str],
         typer.Option("--account", "-a", help="Account name (default: from config)"),
+    ] = None,
+    date: Annotated[
+        Optional[str],
+        typer.Option("--date", "-d", help="Transaction date in YYYY-MM-DD format"),
     ] = None,
 ) -> None:
     """Add INCOME transaction (positive/incoming money)."""
@@ -112,12 +117,21 @@ def add_income(
         if validated_account is None:
             raise typer.Exit(1)
 
+        parsed_date = None
+        if date:
+            try:
+                parsed_date = datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                show_error(f"Invalid date format '{date}'. Use YYYY-MM-DD (e.g., 2024-01-15)")
+                raise typer.Exit(1)
+
         transaction = storage.add_transaction(
             transaction_type="income",
             amount=amount,
             category=category,
             account=validated_account,
             note=note,
+            date=parsed_date,
         )
 
         account_suffix = _format_account_suffix(transaction["account"])

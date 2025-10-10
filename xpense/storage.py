@@ -43,8 +43,12 @@ class TransactionStorage:
         category: str,
         account: str = "default",
         note: str = "",
+        date: Optional[datetime] = None,
     ) -> dict[str, str]:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if date is None:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            timestamp = date.strftime("%Y-%m-%d %H:%M:%S")
         normalized_category = category.lower().replace(" ", "_")
         normalized_account = account.lower().replace(" ", "_")
 
