@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.4.0...xpense-v0.5.0) (2025-10-10)
+
+
+### Features
+
+* add much more useful help text ([#11](https://github.com/Gabriel-Rockson/xpense/issues/11)) ([da6c2da](https://github.com/Gabriel-Rockson/xpense/commit/da6c2da88027a537febe7c58c6006deb1315462a))
+
 ## [0.4.0](https://github.com/Gabriel-Rockson/xpense/compare/xpense-v0.3.0...xpense-v0.4.0) (2025-10-10)
 
 
