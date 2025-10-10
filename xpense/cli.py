@@ -1,3 +1,5 @@
+import os
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -41,6 +43,9 @@ HELP_TEXT = """A beautiful CLI expense and income tracker
 
   [green]xpense report[/green]
     See breakdown by category
+
+  [green]xpense dashboard[/green]
+    Launch interactive web dashboard
 """
 
 app = typer.Typer(
@@ -353,6 +358,38 @@ def export(
 
     except Exception as e:
         show_error(f"Failed to export: {str(e)}")
+        raise typer.Exit(1)
+
+
+@app.command()
+def dashboard() -> None:
+    """Launch interactive dashboard in browser."""
+    try:
+        console.print("[cyan]🚀 Launching xpense dashboard...[/cyan]")
+
+        dashboard_path = Path(__file__).parent / "dashboard" / "app.py"
+
+        env = os.environ.copy()
+
+        result = subprocess.run(
+            ["streamlit", "run", str(dashboard_path)],
+            env=env,
+        )
+
+        if result.returncode != 0:
+            show_error("Dashboard failed to start")
+            raise typer.Exit(1)
+
+    except FileNotFoundError:
+        show_error(
+            "Streamlit is not installed. Install dependencies with: uv sync or pip install -e ."
+        )
+        raise typer.Exit(1)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Dashboard stopped.[/yellow]")
+        raise typer.Exit(0)
+    except Exception as e:
+        show_error(f"Failed to start dashboard: {str(e)}")
         raise typer.Exit(1)
 
 
