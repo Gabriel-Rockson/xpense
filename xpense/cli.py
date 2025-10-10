@@ -23,10 +23,31 @@ from xpense.display import (
 from xpense.storage import TransactionStorage
 from xpense.utils import parse_date_arg
 
+HELP_TEXT = """A beautiful CLI expense and income tracker
+
+[bold cyan]Quick Start Commands:[/bold cyan]
+
+  [green]xpense 25.50 lunch "at the office"[/green]
+    Add an expense (amount + category + optional note)
+
+  [green]xpense add 1000 salary "monthly paycheck"[/green]
+    Add income (use 'add' subcommand)
+
+  [green]xpense list[/green]
+    View all transactions
+
+  [green]xpense balance[/green]
+    Check your current balance
+
+  [green]xpense report[/green]
+    See breakdown by category
+"""
+
 app = typer.Typer(
-    help="A beautiful CLI expense and income tracker",
+    help=HELP_TEXT,
     add_completion=False,
     no_args_is_help=False,
+    rich_markup_mode="rich",
 )
 
 storage = TransactionStorage()
